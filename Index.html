@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root {
+  --bg: #f6f7f5; --panel: #ffffff; --ink: #1d2422; --muted: #5d6865; --rule: #d9dedb;
+  --accent: #1f5f5b; --accent-ink: #ffffff; --chip: #eef1ef;
+  --flag-edge: #b7860b; --good: #2f7a4f; --warn: #8a5a00; --bad: #9a3b2e; --purple: #6a329f;
+  --serif: "Source Serif 4", Georgia, serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #121615; --panel: #1a201e; --ink: #e5ebe8; --muted: #9aa6a2; --rule: #2d3633;
+  --accent: #5fb3ac; --accent-ink: #0d1312; --chip: #242c29;
+  --flag-edge: #e0b13a; --good: #6cc292; --warn: #e0b13a; --bad: #f08b78; --purple: #c29be6; color-scheme: dark } }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--sans); padding: 20px 16px 60px }
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 16px }
+h1 { font: 600 26px/1.2 var(--serif); margin: 0 }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 70ch }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; display: grid; gap: 12px }
+.label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600 }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+input[type=text] { flex: 1 1 320px; min-width: 0; font: inherit; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--bg); color: var(--ink) }
+button { font: inherit; font-weight: 500; border: 1px solid var(--rule); background: var(--panel); color: var(--ink); border-radius: 6px; padding: 7px 12px; cursor: pointer }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink) }
+button.danger { color: var(--bad) }
+button:disabled { opacity: .5; cursor: default }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.seg { display: inline-grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; max-width: 460px; width: 100% }
+.seg label { padding: 8px 10px; cursor: pointer; display: grid; border-right: 1px solid var(--rule) }
+.seg label:last-child { border-right: 0 }
+.seg input { position: absolute; opacity: 0 }
+.seg label.on { background: var(--chip); box-shadow: inset 0 -2px 0 var(--accent) }
+.seg small { color: var(--muted); font-size: 12px }
+.note { color: var(--muted); font-size: 12.5px; margin: 0 }
+.msg { font-size: 13.5px; min-height: 1.4em }
+.msg.err { color: var(--bad) }
+.docline { font-size: 14px }
+.docline a { color: var(--accent) }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted) }
+.stats strong { color: var(--ink); font-variant-numeric: tabular-nums }
+.bar { position: sticky; top: 0; z-index: 2; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between }
+.cards { display: grid; gap: 10px }
+.card { background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--flag-edge); border-radius: 6px; padding: 12px 14px; display: grid; gap: 8px }
+.card.done { border-left-color: var(--good) }
+.card.gone { display: none }
+.top { display: flex; gap: 10px; align-items: flex-start }
+.top input { margin-top: 4px; width: 16px; height: 16px; flex: none }
+.q { font: 15px/1.55 var(--serif); margin: 0 }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.chip { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--muted) }
+.tier { font: 500 11px var(--mono); padding: 2px 7px; border-radius: 4px; border: 1px solid currentColor }
+.tier.HIGH, .tier.CONTEXTUAL { color: var(--good) }
+.tier.MEDIUM, .tier.WEAK { color: var(--warn) }
+.tier.RERANKED { color: var(--purple) }
+.tier.NO_MATCH { color: var(--bad) }
+ol { margin: 0; padding-left: 20px; display: grid; gap: 3px; font-size: 13.5px }
+.sc { font: 11.5px var(--mono); color: var(--muted) }
+.web { border-top: 1px dashed var(--rule); padding-top: 8px; font-size: 13.5px }
+.web .warn { color: var(--warn); font-size: 12px }
+.empty { color: var(--muted); padding: 8px 0 }
+[hidden] { display: none !important }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Citation Scout</h1>
+    <p class="sub">Paste a Google Doc link, scan it, then choose which flags to highlight in the doc. Nothing is changed until you click Highlight or Comment.</p>
+  </header>
+
+  <section class="panel">
+    <div class="label">Google Doc</div>
+    <div class="row">
+      <input type="text" id="docUrl" placeholder="https://docs.google.com/document/d/…/edit" aria-label="Google Doc link">
+      <button id="loadBtn">Open doc</button>
+    </div>
+    <div class="docline" id="docLine" hidden></div>
+
+    <div class="label">Detection</div>
+    <div class="seg" id="seg">
+      <label class="on"><input type="radio" name="mode" value="RULE" checked><b>Rules</b><small>Free, a few seconds</small></label>
+      <label><input type="radio" name="mode" value="LLM" id="modeLlm"><b>Claude</b><small>Smarter, about a cent per doc</small></label>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="scanBtn" disabled>Scan doc</button>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+  </section>
+
+  <section id="results" hidden>
+    <div class="stats" id="stats" style="margin-bottom:10px"></div>
+    <div class="bar">
+      <div class="row">
+        <label class="note"><input type="checkbox" id="selAll"> Select all</label>
+        <span class="note" id="selCount">0 selected</span>
+      </div>
+      <div class="row">
+        <button class="primary" id="hlBtn" disabled>Highlight in doc</button>
+        <button id="cmBtn" disabled>Add as comments</button>
+        <button class="danger" id="clearBtn">Remove all highlights</button>
+      </div>
+    </div>
+    <p class="note" style="margin:8px 0">Highlight marks the sentence and adds a ⟦CITE-SUGGEST⟧ note after it (search the doc for CITE-SUGGEST to jump between them). Comments carry the same note, but Google may show them as "Original content deleted" because scripts can't pin a comment to a sentence.</p>
+    <div class="cards" id="cards"></div>
+    <div class="row" style="margin-top:12px"><button id="undismissBtn" hidden>Bring back dismissed flags</button></div>
+  </section>
+</div>
+
+<script>
+var state = { doc: null, results: [], style: 'unknown', selected: {} };
+function req(doc) { return { doc: doc || (state.doc && state.doc.docId), }; }
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function msg(t, isErr) { $('msg').textContent = t || ''; $('msg').className = 'msg' + (isErr ? ' err' : ''); }
+function call(fn) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  return new Promise(function (res, rej) {
+    var r = google.script.run.withSuccessHandler(res).withFailureHandler(function (e) { rej(e && e.message ? e.message : String(e)); });
+    r[fn].apply(r, args);
+  });
+}
+
+document.querySelectorAll('#seg input').forEach(function (i) {
+  i.addEventListener('change', function () { document.querySelectorAll('#seg label').forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); }); });
+});
+
+$('loadBtn').onclick = function () {
+  var url = $('docUrl').value.trim();
+  if (!url) { msg('Paste a Google Doc link first.', true); return; }
+  $('loadBtn').disabled = true; msg('Opening…');
+  call('apiCheckDoc', req(url)).then(function (d) {
+    state.doc = d;
+    $('docLine').hidden = false;
+    $('docLine').innerHTML = 'Doc: <a href="' + esc(d.url) + '" target="_blank" rel="noopener">' + esc(d.name) + '</a>' + (d.user ? ' <span class="note">· edits made as ' + esc(d.user) + '</span>' : '');
+    if (!d.libraries) msg('Doc opened, but no Zotero CSVs are configured, so there will be no library matches.', true);
+    else msg('Ready to scan against ' + d.libraries + ' Zotero export' + (d.libraries > 1 ? 's' : '') + '.');
+    if (!d.llmAvailable) { $('modeLlm').disabled = true; $('modeLlm').closest('label').querySelector('small').textContent = 'No API key set'; }
+    $('scanBtn').disabled = false;
+  }).catch(function (e) { msg(e, true); }).then(function () { $('loadBtn').disabled = false; });
+};
+$('docUrl').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loadBtn').click(); });
+
+$('scanBtn').onclick = function () {
+  if (!state.doc) return;
+  var mode = document.querySelector('input[name=mode]:checked').value;
+  $('scanBtn').disabled = true;
+  msg(mode === 'LLM' ? 'Scanning with Claude. Long docs can take a few minutes…' : 'Scanning…');
+  call('apiScan', req(), { detection: mode }).then(function (r) {
+    state.results = r.results; state.style = r.style; state.selected = {};
+    msg('Scanned with ' + (r.detection === 'LLM' ? 'Claude' : 'rules') + '.');
+    $('undismissBtn').hidden = !r.dismissedCount;
+    $('undismissBtn').textContent = 'Bring back ' + r.dismissedCount + ' dismissed flag' + (r.dismissedCount === 1 ? '' : 's');
+    render();
+  }).catch(function (e) { msg('Scan failed: ' + e, true); }).then(function () { $('scanBtn').disabled = false; });
+};
+
+function cardHtml(r, i) {
+  var m = r.contextualCitationText
+    ? '<p class="note">Likely citation, carried over from context: <strong>' + esc(r.contextualCitationText) + '</strong></p>'
+    : r.matches.length
+      ? '<div class="label">From your library</div><ol>' + r.matches.map(function (x) {
+          return '<li>' + esc((x.authors || 'Unknown').split(';')[0]) + ' (' + esc(x.year || 'n.d.') + ') <em>' + esc(x.title) + '</em> <span class="sc">' + Number(x.score).toFixed(2) + '</span></li>';
+        }).join('') + '</ol>'
+      : '<p class="note">No close match in your library.</p>';
+  var w = '';
+  if (r.web) {
+    w = r.web.found
+      ? '<div class="web"><div class="warn">Found outside your library. Check it before citing.</div>' + esc(r.web.authors) + ' (' + esc(r.web.year) + ') <em>' + esc(r.web.title) + '</em>' +
+        (r.web.url ? ' · <a href="' + esc(r.web.url) + '" target="_blank" rel="noopener">link</a>' : '') + ' <span class="chip">' + esc(r.web.confidence || '') + '</span>' +
+        (r.web.reasoning ? '<div class="note">' + esc(r.web.reasoning) + '</div>' : '') + '</div>'
+      : '<div class="web note">Nothing found outside your library.</div>';
+  }
+  return '<article class="card' + (r._done ? ' done' : '') + (r._gone ? ' gone' : '') + '">' +
+    '<div class="top"><input type="checkbox" data-sel="' + i + '"' + (state.selected[i] ? ' checked' : '') + ' aria-label="Select this flag">' +
+    '<div style="display:grid;gap:8px;min-width:0">' +
+    '<div class="meta"><span class="tier ' + esc(r.tier) + '">' + esc(r.tier.replace('_', ' ')) + '</span>' + (r._done ? '<span class="chip">' + esc(r._done) + '</span>' : '') + '</div>' +
+    '<p class="q">' + esc(r.text) + '</p>' +
+    '<div class="meta">' + r.reasons.map(function (x) { return '<span class="chip">' + esc(x) + '</span>'; }).join('') + '</div>' +
+    m + w +
+    '<div class="row">' + (r.web ? '' : '<button data-find="' + i + '">Find source outside library</button>') + '<button data-dismiss="' + i + '">Dismiss</button></div>' +
+    '</div></div></article>';
+}
+
+function render() {
+  $('results').hidden = false;
+  var live = state.results.filter(function (r) { return !r._gone; });
+  var tiers = {}; live.forEach(function (r) { tiers[r.tier] = (tiers[r.tier] || 0) + 1; });
+  $('stats').innerHTML = '<span><strong>' + live.length + '</strong> sentences may need a citation</span>' +
+    Object.keys(tiers).map(function (t) { return '<span><span class="tier ' + t + '">' + t.replace('_', ' ') + '</span> ' + tiers[t] + '</span>'; }).join('');
+  $('cards').innerHTML = live.length ? state.results.map(cardHtml).join('') : '<p class="empty">Nothing flagged. Try Claude mode for uncited facts and figures the rules can\'t spot.</p>';
+  updateSel();
+}
+
+function selectedItems() {
+  return Object.keys(state.selected).filter(function (k) { return state.selected[k] && !state.results[k]._gone; }).map(Number);
+}
+function updateSel() {
+  var n = selectedItems().length;
+  $('selCount').textContent = n + ' selected';
+  $('hlBtn').disabled = $('cmBtn').disabled = !n;
+}
+
+document.addEventListener('change', function (e) {
+  if (e.target.matches('[data-sel]')) { state.selected[e.target.getAttribute('data-sel')] = e.target.checked; updateSel(); }
+  if (e.target.id === 'selAll') { state.results.forEach(function (r, i) { if (!r._gone) state.selected[i] = e.target.checked; }); render(); }
+});
+
+document.addEventListener('click', function (e) {
+  var f = e.target.closest('[data-find]'), d = e.target.closest('[data-dismiss]');
+  if (f) {
+    var i = +f.getAttribute('data-find'); f.disabled = true; f.textContent = 'Searching…';
+    call('apiFindSource', req(), state.results[i]).then(function (w) { state.results[i].web = w; render(); })
+      .catch(function (err) { f.disabled = false; f.textContent = 'Find source outside library'; msg(err, true); });
+  }
+  if (d) {
+    var j = +d.getAttribute('data-dismiss'); d.disabled = true;
+    call('apiDismiss', req(), state.results[j]).then(function () { state.results[j]._gone = true; delete state.selected[j]; render(); })
+      .catch(function (err) { d.disabled = false; msg(err, true); });
+  }
+});
+
+function applyTo(fn, label) {
+  var idx = selectedItems(); if (!idx.length) return;
+  var items = idx.map(function (i) { return state.results[i]; });
+  $('hlBtn').disabled = $('cmBtn').disabled = true;
+  msg(label + ' ' + idx.length + ' sentence' + (idx.length > 1 ? 's' : '') + '…');
+  var p = fn === 'apiComment' ? call(fn, req(), items, state.style) : call(fn, req(), items);
+  p.then(function (r) {
+    if (fn === 'apiHighlight') {
+      msg('Highlighted ' + r.annotated + '.' + (r.skipped ? ' ' + r.skipped + ' were already highlighted.' : '') + (r.notFound ? ' ' + r.notFound + ' couldn\'t be found (the text may have changed since the scan).' : ''), !!r.notFound);
+      idx.forEach(function (i) { state.results[i]._done = 'highlighted'; });
+    } else {
+      msg('Added ' + r.written + ' comment' + (r.written === 1 ? '' : 's') + '.' + (r.failed ? ' ' + r.failed + ' failed.' : ''), !!r.failed);
+      idx.forEach(function (i) { state.results[i]._done = 'commented'; });
+    }
+    state.selected = {}; $('selAll').checked = false; render();
+  }).catch(function (e) { msg(e, true); updateSel(); });
+}
+$('hlBtn').onclick = function () { applyTo('apiHighlight', 'Highlighting'); };
+$('cmBtn').onclick = function () { applyTo('apiComment', 'Commenting on'); };
+
+var clearArmed = false;
+$('clearBtn').onclick = function () {
+  if (!clearArmed) {
+    clearArmed = true; $('clearBtn').textContent = 'Click again: removes ALL highlighting in the doc';
+    setTimeout(function () { clearArmed = false; $('clearBtn').textContent = 'Remove all highlights'; }, 5000);
+    return;
+  }
+  clearArmed = false; $('clearBtn').disabled = true; msg('Removing highlights…');
+  call('apiClearHighlights', req()).then(function (n) {
+    msg('Removed ' + n + ' marker' + (n === 1 ? '' : 's') + ' and cleared highlighting.');
+    state.results.forEach(function (r) { if (r._done === 'highlighted') delete r._done; }); render();
+  }).catch(function (e) { msg(e, true); }).then(function () { $('clearBtn').disabled = false; $('clearBtn').textContent = 'Remove all highlights'; });
+};
+
+$('undismissBtn').onclick = function () {
+  call('apiClearDismissed', req()).then(function () { $('undismissBtn').hidden = true; msg('Dismissed flags will show again on the next scan.'); }).catch(function (e) { msg(e, true); });
+};
+</script>
+</body>
+</html>
